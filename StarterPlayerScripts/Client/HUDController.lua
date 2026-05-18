@@ -120,7 +120,7 @@ local function buildHUD(playerGui: PlayerGui)
 	panel.BackgroundColor3 = BG
 	panel.BackgroundTransparency = 0.15
 	panel.BorderSizePixel = 0
-	panel.Position = UDim2.new(0.5, -170, 0, 16)
+	panel.Position = UDim2.new(0, 16, 0, 16)
 	panel.Size = UDim2.new(0, 340, 0, 390)
 	panel.Parent = gui
 

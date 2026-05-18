@@ -20,12 +20,12 @@ local GetPlayerData = Remotes:WaitForChild("GetPlayerData") :: RemoteFunction
 local Player = Players.LocalPlayer
 local UnboxController = {}
 
--- ── State ──────────────────────────────────────────
+-- â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 local currentCash: number = 0
 local unboxGui: ScreenGui? = nil
 local isOpen: boolean = false
 
--- ── Colors ─────────────────────────────────────────
+-- â”€â”€ Colors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 local BG = Color3.fromRGB(20, 20, 30)
 local FG = Color3.fromRGB(240, 240, 245)
 local ACCENT = Color3.fromRGB(80, 160, 255)
@@ -51,7 +51,7 @@ local function rarityColor(rarity: string): Color3
 	return RARITY_COLORS[rarity] or EMPTY
 end
 
--- ── Helpers ────────────────────────────────────────
+-- â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 local function formatNumber(n: number): string
 	local formatted = tostring(math.floor(n))
 	local result = ""
@@ -76,7 +76,7 @@ local function formatMoney(n: number): string
 	end
 end
 
--- ── Factory helpers ────────────────────────────────
+-- â”€â”€ Factory helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 local function makeLabel(parent: Instance, name: string, text: string, sizeY: number, textSize: number, color: Color3, font: Enum.Font?): TextLabel
 	local l = Instance.new("TextLabel")
@@ -120,7 +120,7 @@ local function makeButton(parent: Instance, name: string, text: string, size: UD
 	return btn
 end
 
--- ── Build results popup ────────────────────────────
+-- â”€â”€ Build results popup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 -- Show a temporary popup in the center of the screen for each unbox result
 local function showResultPopup(result: any)
@@ -162,7 +162,7 @@ local function showResultPopup(result: any)
 	if result.type == "gear" then
 		typeLabel.Text = string.format("Tier %d  %s  \u{2709} %s", result.tier, result.itemId:upper(), result.rarity or "?")
 	elseif result.duplicate then
-		typeLabel.Text = string.format("Tier %d Motor (duplicate — +$%s)", result.tier, formatNumber(result.refundAmount or 0))
+		typeLabel.Text = string.format("Tier %d Motor (duplicate â€” +$%s)", result.tier, formatNumber(result.refundAmount or 0))
 		typeLabel.TextColor3 = GOLD
 	else
 		typeLabel.Text = string.format("Tier %d Motor \u{2728} NEW!", result.tier)
@@ -196,7 +196,7 @@ local function showResultPopup(result: any)
 	end)
 end
 
--- ── Build results list ────────────────────────────
+-- â”€â”€ Build results list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 -- Show a scrolling list of all unboxed items (for batch opens)
 local function showResultsList(results: { any })
@@ -315,7 +315,7 @@ local function showResultsList(results: { any })
 	end
 end
 
--- ── Box pool summary helper ─────────────────────────
+-- â”€â”€ Box pool summary helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 -- Format a one-line summary of what a box can contain
 local function formatPoolSummary(boxDef: any): string
@@ -348,7 +348,7 @@ local function formatPoolSummary(boxDef: any): string
 	return table.concat(parts, "\n")
 end
 
--- ── Build unbox screen ────────────────────────────
+-- â”€â”€ Build unbox screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 local function buildUnboxScreen(playerGui: PlayerGui)
 	-- Destroy existing if any
@@ -384,7 +384,8 @@ local function buildUnboxScreen(playerGui: PlayerGui)
 	panel.BackgroundTransparency = 0.1
 	panel.BorderSizePixel = 0
 	panel.Size = UDim2.new(0, 720, 0, 420)
-	panel.Position = UDim2.new(0.5, -360, 0.5, -210)
+	panel.AnchorPoint = Vector2.new(0.5, 0.5)
+		panel.Position = UDim2.new(0.5, 0, 0.5, 0)
 	panel.Parent = gui
 
 	-- Title bar
@@ -507,7 +508,7 @@ local function refreshAffordability()
 	end
 end
 
--- ── Remote handlers ───────────────────────────────
+-- â”€â”€ Remote handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 local function onBoxOpened(data: any)
 	-- Update local cash from the server response
@@ -534,7 +535,7 @@ local function onBoxOpened(data: any)
 	end
 end
 
--- ── Public API ────────────────────────────────────
+-- â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function UnboxController.Show()
 	if not unboxGui then return end
@@ -599,3 +600,5 @@ function UnboxController:Init()
 end
 
 return UnboxController
+
+
