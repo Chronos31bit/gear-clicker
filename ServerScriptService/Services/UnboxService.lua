@@ -258,7 +258,7 @@ function UnboxService:Init()
 		newRemote.Name = "BoxOpened"
 		newRemote.Parent = Remotes
 		BoxOpenedRemote = newRemote :: RemoteEvent
-		warn("[UnboxService] BoxOpened RemoteEvent did not exist — created one in ReplicatedStorage/Remotes")
+		print("[UnboxService] BoxOpened RemoteEvent did not exist — created one in ReplicatedStorage/Remotes")
 	end
 end
 

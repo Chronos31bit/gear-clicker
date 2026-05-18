@@ -1,4 +1,4 @@
---!strict
+﻿--!strict
 
 -- Player profile lifecycle: DataStore persistence, session locking, schema validation.
 -- Server-authoritative: client never reads or writes DataStore directly.
@@ -138,7 +138,7 @@ end
 local function newDefaultProfile(): Profile
 	return {
 		version = SAVE_VERSION,
-		cash = 0,
+		cash = GameConfig.STARTING_CASH,
 		equippedMotor = "motor_rusty",
 		equippedGears = {},
 		inventory = {
