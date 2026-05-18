@@ -21,19 +21,17 @@ local UnboxService = require(Services:WaitForChild("UnboxService"))
 local EarningsService = require(Services:WaitForChild("EarningsService"))
 local InventoryService = require(Services:WaitForChild("InventoryService"))
 local MotorService = require(Services:WaitForChild("MotorService"))
+local GearService = require(Services:WaitForChild("GearService"))
 
 PlayerDataService:Init()
 UnboxService:Init()
 EarningsService:Init()
 InventoryService:Init()
 MotorService:Init()
+GearService:Init()
 
 OpenBox.OnServerEvent:Connect(function(player, ...)
 	UnboxService:HandleOpenBox(player, ...)
-end)
-
-EquipGear.OnServerEvent:Connect(function(player, ...)
-	InventoryService:HandleEquipGear(player, ...)
 end)
 
 ClickGear.OnServerEvent:Connect(function(player, ...)
