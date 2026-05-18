@@ -9,7 +9,7 @@ GameConfig.MAX_GEAR_SLOTS_BASE = 1
 GameConfig.MAX_GEAR_SLOTS_CAP = 5
 GameConfig.BASE_TICK_RATE = 1 -- seconds per AFK earnings tick
 GameConfig.CLICK_MULTIPLIER = 2 -- click burst = tick earnings * this
-GameConfig.STARTING_CASH = 0
+GameConfig.STARTING_CASH = 100
 GameConfig.AUTOSAVE_INTERVAL = 60 -- seconds between profile autosaves
 
 return GameConfig
