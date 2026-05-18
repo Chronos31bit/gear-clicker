@@ -135,6 +135,7 @@ local BoxData: { [string]: BoxDef } = {
 }
 
 -- Return the full box catalog (only box definitions, not utility functions).
+-- Order is not guaranteed — use GetCatalogList() when order matters.
 function BoxData.GetCatalog(): { [string]: BoxDef }
 	local catalog: { [string]: BoxDef } = {}
 	for id, def in pairs(BoxData) do
@@ -148,6 +149,21 @@ end
 -- Look up a single box definition by ID. Returns nil if not found.
 function BoxData.GetBox(boxId: string): BoxDef?
 	return BoxData[boxId]
+end
+
+-- Return box definitions as an ordered array sorted by cost (cheapest first).
+-- Use this when order matters (UI display, iteration).
+function BoxData.GetCatalogList(): { BoxDef }
+	local list: { BoxDef } = {}
+	for _, boxDef in pairs(BoxData) do
+		if typeof(boxDef) == "table" and (boxDef :: any).id then
+			table.insert(list, boxDef :: BoxDef)
+		end
+	end
+	table.sort(list, function(a: BoxDef, b: BoxDef): boolean
+		return a.cost < b.cost
+	end)
+	return list
 end
 
 return BoxData
