@@ -16,8 +16,29 @@ local HUDController = {}
 -- Current cash balance, updated by server events
 local currentCash: number = 0
 
--- Cached reference to the cash display label
-local cashLabel: TextLabel? = nil
+-- Create the HUD ScreenGui with a cash label.
+-- Returns the cash label TextLabel.
+local function buildHUD(playerGui: PlayerGui): TextLabel
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "HUDGui"
+	gui.ResetOnSpawn = false
+	gui.Parent = playerGui
+
+	local label = Instance.new("TextLabel")
+	label.Name = "CashLabel"
+	label.Text = "Cash: $0"
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 28
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.BackgroundTransparency = 1
+	label.Position = UDim2.new(0, 20, 0, 20)
+	label.Size = UDim2.new(0, 300, 0, 40)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.ZIndex = 10
+	label.Parent = gui
+
+	return label
+end
 
 -- Format a number with commas (e.g. 1234567 -> "1,234,567")
 local function formatNumber(n: number): string
@@ -39,8 +60,9 @@ end
 local function onCashUpdated(newBalance: number, delta: number)
 	currentCash = newBalance
 
-	if cashLabel then
-		cashLabel.Text = "Cash: $" .. formatNumber(newBalance)
+	local label = Player:WaitForChild("PlayerGui"):WaitForChild("HUDGui"):FindFirstChild("CashLabel")
+	if label and label:IsA("TextLabel") then
+		label.Text = "Cash: $" .. formatNumber(newBalance)
 	end
 end
 
@@ -56,13 +78,11 @@ function HUDController.GetCurrentCash(): number
 	return currentCash
 end
 
--- Init wires remote listeners and finds UI elements.
+-- Init builds the HUD UI and wires remote listeners.
 -- Called from ClientMain when the client starts.
 function HUDController:Init()
-	-- Find the cash label in the player's GUI
 	local playerGui = Player:WaitForChild("PlayerGui")
-	local hudGui = playerGui:WaitForChild("HUDGui")
-	cashLabel = hudGui:WaitForChild("CashLabel") :: TextLabel?
+	buildHUD(playerGui)
 
 	CashUpdated.OnClientEvent:Connect(onCashUpdated)
 	WelcomeBack.OnClientEvent:Connect(onWelcomeBack)

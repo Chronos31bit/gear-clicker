@@ -34,27 +34,6 @@
         "$path": "ServerScriptService/Main.server.lua"
       }
     },
-    "StarterGui": {
-      "$className": "StarterGui",
-      "HUDGui": {
-        "$className": "ScreenGui",
-        "ResetOnSpawn": false,
-        "CashLabel": {
-          "$className": "TextLabel",
-          "$properties": {
-            "Text": "Cash: 0",
-            "Font": "GothamBold",
-            "TextSize": 28,
-            "TextColor3": [255, 255, 255],
-            "BackgroundTransparency": 1,
-            "Position": "UDim2(0, 20, 0, 20)",
-            "Size": "UDim2(0, 300, 0, 40)",
-            "TextXAlignment": "Left",
-            "ZIndex": 10
-          }
-        }
-      }
-    },
     "StarterPlayer": {
       "$className": "StarterPlayer",
       "StarterPlayerScripts": {
