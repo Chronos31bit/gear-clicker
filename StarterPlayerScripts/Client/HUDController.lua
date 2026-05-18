@@ -248,7 +248,7 @@ local function updateMotorDisplay()
 				filledCount += 1
 			end
 
-			statsL.Text = string.format("Tier %d  \8226  %.1f RPM  \8226  %d/%d slots",
+			statsL.Text = string.format("Tier %d  \u{2022}  %.1f RPM  \u{2022}  %d/%d slots",
 				def.tier, def.rpm, filledCount, def.maxGearSlots)
 			statsL.TextColor3 = EMPTY
 		else
@@ -317,7 +317,7 @@ local function updateGearSlots()
 	local footer = panel:FindFirstChild("Footer") :: TextLabel?
 	if footer then
 		local clickAmount = totalPerTick * 2 -- CLICK_MULTIPLIER
-		footer.Text = string.format("Total: %s/tick  \8226  Click: +%s",
+		footer.Text = string.format("Total: %s/tick  \u{2022}  Click: +%s",
 			formatMoney(totalPerTick), formatMoney(clickAmount))
 		footer.TextColor3 = EMPTY
 	end
