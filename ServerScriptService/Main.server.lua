@@ -1,6 +1,7 @@
 --!strict
 
 -- Server bootstrap. Requires all services and wires them to remotes.
+-- Player lifecycle (join/leave) is handled inside PlayerDataService:Init().
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -35,7 +36,7 @@ OpenBox.OnServerEvent:Connect(function(player, ...)
 end)
 
 RequestSave.OnServerEvent:Connect(function(player)
-	PlayerDataService:SavePlayerAsync(player)
+	PlayerDataService:SavePlayerAsync(player, false)
 end)
 
 GetPlayerData.OnServerInvoke = function(player)
@@ -47,10 +48,6 @@ GetCatalog.OnServerInvoke = function()
 	return BoxData
 end
 
-Players.PlayerAdded:Connect(function(player)
-	PlayerDataService:LoadPlayerAsync(player)
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-	PlayerDataService:SavePlayerAsync(player)
-end)
+-- Player lifecycle (PlayerAdded → LoadPlayerAsync, PlayerRemoving → SavePlayerAsync)
+-- is handled inside PlayerDataService:Init() alongside session locking, autosave,
+-- and BindToClose.

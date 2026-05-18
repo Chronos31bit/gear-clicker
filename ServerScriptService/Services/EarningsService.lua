@@ -26,15 +26,13 @@ local tickLoops: { [Player]: boolean } = {}
 local lastClickTime: { [Player]: number } = {}
 
 -- Resolve equipped gear uniqueIds into { gearId, rarity } pairs.
--- Looks up each uniqueId in the player's ownedGears array.
+-- Looks up each uniqueId directly in the player's inventory.gears map.
 local function resolveEquippedGears(profile: PlayerDataService.Profile): { { gearId: string, rarity: string } }
 	local result: { { gearId: string, rarity: string } } = {}
-	for _, uid in ipairs(profile.equippedGears) do
-		for _, gear in ipairs(profile.ownedGears) do
-			if gear.uniqueId == uid then
-				table.insert(result, { gearId = gear.gearId, rarity = gear.rarity })
-				break
-			end
+	for _, uid in pairs(profile.equippedGears) do
+		local gear = profile.inventory.gears[uid]
+		if gear then
+			table.insert(result, { gearId = gear.id, rarity = gear.rarity })
 		end
 	end
 	return result
@@ -80,7 +78,7 @@ local function startTickLoop(player: Player)
 				continue
 			end
 
-			profile.cash += earningsPerTick
+			PlayerDataService.AddCash(player, earningsPerTick)
 			CashUpdatedRemote:FireClient(player, profile.cash, earningsPerTick)
 		end
 	end)
@@ -93,7 +91,7 @@ local function stopTickLoop(player: Player)
 end
 
 -- Compute and grant offline earnings when a player rejoins.
--- Uses profile.lastSeen (set on last save/disconnect) to determine time away.
+-- Uses profile.stats.lastSeen (set on last save/disconnect) to determine time away.
 -- Earnings are capped at 8 hours and awarded at half the AFK rate.
 -- Fires WelcomeBack to the client if any earnings were granted.
 local function handleOfflineEarnings(player: Player)
@@ -103,7 +101,7 @@ local function handleOfflineEarnings(player: Player)
 	end
 
 	local now = os.time()
-	local offlineSeconds = now - profile.lastSeen
+	local offlineSeconds = now - profile.stats.lastSeen
 	if offlineSeconds <= 0 then
 		return
 	end
@@ -111,18 +109,18 @@ local function handleOfflineEarnings(player: Player)
 	-- Need a motor to have earned anything offline
 	local motorDef = MotorData.GetMotor(profile.equippedMotor)
 	if not motorDef then
-		profile.lastSeen = now
+		profile.stats.lastSeen = now
 		return
 	end
 
 	local equippedGearData = resolveEquippedGears(profile)
 	if #equippedGearData == 0 then
-		profile.lastSeen = now
+		profile.stats.lastSeen = now
 		return
 	end
 
 	local earningsPerTick = EarningsCalc.ComputeTickEarnings(equippedGearData, motorDef.rpm)
-	profile.lastSeen = now
+	profile.stats.lastSeen = now
 
 	if earningsPerTick <= 0 then
 		return
@@ -130,7 +128,7 @@ local function handleOfflineEarnings(player: Player)
 
 	local offlineEarnings = EarningsCalc.ComputeOfflineEarnings(offlineSeconds, earningsPerTick)
 	if offlineEarnings > 0 then
-		profile.cash += offlineEarnings
+		PlayerDataService.AddCash(player, offlineEarnings)
 		WelcomeBackRemote:FireClient(player, offlineEarnings)
 	end
 end
@@ -167,7 +165,7 @@ function EarningsService.HandleClickGear(player: Player)
 	end
 
 	local reward = EarningsCalc.ComputeClickReward(earningsPerTick)
-	profile.cash += reward
+	PlayerDataService.AddCash(player, reward)
 	CashUpdatedRemote:FireClient(player, profile.cash, reward)
 end
 
@@ -183,8 +181,7 @@ function EarningsService:Init()
 	-- Start tick loop and grant offline earnings when a player joins
 	Players.PlayerAdded:Connect(function(player: Player)
 		-- Yield briefly to let PlayerDataService:LoadPlayerAsync finish setting
-		-- up the profile. When DataStore is wired, a more robust handoff
-		-- (signal/callback) will be needed.
+		-- up the profile.
 		task.wait(0.1)
 
 		handleOfflineEarnings(player)

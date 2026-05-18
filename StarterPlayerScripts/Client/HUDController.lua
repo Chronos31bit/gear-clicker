@@ -1,10 +1,11 @@
 --!strict
 
--- Manages HUD display: cash counter, equipped gear slots, motor info,
--- and tick/click earnings feedback. Updates UI in response to server state.
+-- Manages HUD display: cash counter (with tween animation), equipped gear slots,
+-- motor info, and tick/click earnings feedback. Updates UI in response to server state.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local CashUpdated = Remotes:WaitForChild("CashUpdated") :: RemoteEvent
@@ -24,8 +25,9 @@ local HUDController = {}
 -- ── State ──────────────────────────────────────────
 local currentCash: number = 0
 local currentMotorId: string? = nil
-local currentEquippedGears: { string } = {}
-local currentOwnedGears: { { uniqueId: string, gearId: string, tier: number, rarity: string } } = {}
+local currentEquippedGears: { [number]: string } = {}
+-- Map of uniqueId -> gear instance (matches server inventory.gears schema)
+local currentOwnedGears: { [string]: { id: string, tier: number, rarity: string, rolledAt: number } } = {}
 
 -- ── Colors ─────────────────────────────────────────
 local BG = Color3.fromRGB(20, 20, 30)
@@ -75,14 +77,9 @@ local function formatMoney(n: number): string
 	end
 end
 
--- Resolve a gear instance uniqueId to its ownedGears entry
-local function findGearByUid(uid: string): { uniqueId: string, gearId: string, tier: number, rarity: string }?
-	for _, g in ipairs(currentOwnedGears) do
-		if g.uniqueId == uid then
-			return g
-		end
-	end
-	return nil
+-- Look up a gear instance by uniqueId from the owned-gears map
+local function findGearByUid(uid: string): { id: string, tier: number, rarity: string }?
+	return currentOwnedGears[uid]
 end
 
 -- Compute per-tick earnings for display purposes only
@@ -225,6 +222,12 @@ local function getPanel(): Frame?
 	return gui:FindFirstChild("Panel") :: Frame?
 end
 
+local function getCashLabel(): TextLabel?
+	local panel = getPanel()
+	if not panel then return nil end
+	return panel:FindFirstChild("CashLabel") :: TextLabel?
+end
+
 local function updateMotorDisplay()
 	local panel = getPanel()
 	if not panel then return end
@@ -238,8 +241,15 @@ local function updateMotorDisplay()
 		if def then
 			nameL.Text = def.displayName
 			nameL.TextColor3 = FG
-			statsL.Text = string.format("Tier %d  •  %.1f RPM  •  %d/%d slots",
-				def.tier, def.rpm, #currentEquippedGears, def.maxGearSlots)
+
+			-- Count filled slots
+			local filledCount = 0
+			for _ in pairs(currentEquippedGears) do
+				filledCount += 1
+			end
+
+			statsL.Text = string.format("Tier %d  \8226  %.1f RPM  \8226  %d/%d slots",
+				def.tier, def.rpm, filledCount, def.maxGearSlots)
 			statsL.TextColor3 = EMPTY
 		else
 			nameL.Text = "Unknown motor"
@@ -274,18 +284,18 @@ local function updateGearSlots()
 		if uid then
 			local gearInst = findGearByUid(uid)
 			if gearInst then
-				local gearDef = GearData.GetGear(gearInst.gearId)
+				local gearDef = GearData.GetGear(gearInst.id)
 				local rarityDef = RarityData.GetRarity(gearInst.rarity)
-				local displayName = gearDef and gearDef.displayName or gearInst.gearId
+				local displayName = gearDef and gearDef.displayName or gearInst.id
 				local rarityName = rarityDef and rarityDef.displayName or gearInst.rarity
 				local rColor = rarityColor(gearInst.rarity)
 
 				nameL.Text = displayName
 				nameL.TextColor3 = FG
-				rarityL.Text = "✦ " .. rarityName
+				rarityL.Text = "\9993 " .. rarityName
 				rarityL.TextColor3 = rColor
 
-				local gearEarn = computeGearEarningsPerTick(gearInst.gearId, gearInst.rarity, rpm)
+				local gearEarn = computeGearEarningsPerTick(gearInst.id, gearInst.rarity, rpm)
 				earnL.Text = formatMoney(gearEarn) .. "/t"
 				earnL.TextColor3 = rColor
 				totalPerTick += gearEarn
@@ -307,36 +317,49 @@ local function updateGearSlots()
 	local footer = panel:FindFirstChild("Footer") :: TextLabel?
 	if footer then
 		local clickAmount = totalPerTick * 2 -- CLICK_MULTIPLIER
-		footer.Text = string.format("Total: %s/tick  •  Click: +%s",
+		footer.Text = string.format("Total: %s/tick  \8226  Click: +%s",
 			formatMoney(totalPerTick), formatMoney(clickAmount))
 		footer.TextColor3 = EMPTY
 	end
 end
 
+-- ── Cash tween animation ──────────────────────────
+
+-- Hidden NumberValue used as a tween target for smooth cash counting
+local cashTweenValue = Instance.new("NumberValue")
+cashTweenValue.Value = 0
+
+local function updateCashLabelText(value: number)
+	local label = getCashLabel()
+	if label then
+		label.Text = "Cash: $" .. formatNumber(math.floor(value))
+	end
+end
+
+cashTweenValue.Changed:Connect(updateCashLabelText)
+
+local function animateCash(fromValue: number, toValue: number)
+	local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local tween = TweenService:Create(cashTweenValue, tweenInfo, { Value = toValue })
+	tween:Play()
+end
+
 -- ── Remote handlers ────────────────────────────────
 
 local function onCashUpdated(newBalance: number, delta: number)
+	local oldCash = currentCash
 	currentCash = newBalance
-	local panel = getPanel()
-	if not panel then return end
-	local cashL = panel:FindFirstChild("CashLabel") :: TextLabel?
-	if cashL then
-		cashL.Text = "Cash: " .. formatMoney(newBalance)
-	end
+	animateCash(oldCash, newBalance)
 end
 
 local function onMotorEquipped(motorId: string, unequippedGearIds: { string })
 	currentMotorId = motorId
-	-- The server may have unequipped gears due to tier/slot caps;
-	-- remove any uids that are no longer in our tracking from the equipped list
-	-- (MotorService already modified profile.equippedGears, but our local
-	--  copy hasn't been updated — fetch fresh data from server)
-	-- Simple approach: re-fetch full profile to stay in sync
+	-- Re-fetch full profile to stay in sync with server
 	task.spawn(function()
 		local data = GetPlayerData:InvokeServer()
 		if data then
 			currentEquippedGears = data.equippedGears
-			currentOwnedGears = data.ownedGears
+			currentOwnedGears = data.inventory.gears
 			currentCash = data.cash
 			updateMotorDisplay()
 			updateGearSlots()
@@ -346,13 +369,11 @@ local function onMotorEquipped(motorId: string, unequippedGearIds: { string })
 end
 
 local function onGearEquipped(gearUniqueId: string?, slotIndex: number)
-	-- The server just notified us of a change. Re-fetch to stay consistent
-	-- (avoids needing to mirror every edge case of the server's array logic).
 	task.spawn(function()
 		local data = GetPlayerData:InvokeServer()
 		if data then
 			currentEquippedGears = data.equippedGears
-			currentOwnedGears = data.ownedGears
+			currentOwnedGears = data.inventory.gears
 			currentCash = data.cash
 			updateMotorDisplay()
 			updateGearSlots()
@@ -391,7 +412,7 @@ function HUDController:Init()
 			currentCash = data.cash
 			currentMotorId = data.equippedMotor
 			currentEquippedGears = data.equippedGears
-			currentOwnedGears = data.ownedGears
+			currentOwnedGears = data.inventory.gears
 			updateMotorDisplay()
 			updateGearSlots()
 			onCashUpdated(currentCash, 0)

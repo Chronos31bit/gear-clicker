@@ -3,7 +3,7 @@
 -- Handles gear equip/unequip operations. Server-authoritative.
 -- Validates player owns the gear, slot is within motor's capacity,
 -- gear tier does not exceed motor's max gear tier, and slot is not occupied.
--- Equipped gears are stored as a contiguous array (no gaps).
+-- Equipped gears are stored in a fixed 5-slot indexed table (nils = empty).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
@@ -19,22 +19,9 @@ local UnequipGearRemote = Remotes:WaitForChild("UnequipGear") :: RemoteEvent
 
 local GearService = {}
 
--- Scan ownedGears array for a gear instance by uniqueId. Returns the instance or nil.
-local function findGearInstance(
-	ownedGears: { { uniqueId: string, gearId: string, tier: number, rarity: string } },
-	uniqueId: string
-): { uniqueId: string, gearId: string, tier: number, rarity: string }?
-	for _, gear in ipairs(ownedGears) do
-		if gear.uniqueId == uniqueId then
-			return gear
-		end
-	end
-	return nil
-end
-
--- Check if a gear uniqueId is already in the equipped gears array.
-local function isGearEquipped(equippedGears: { string }, uniqueId: string): boolean
-	for _, uid in ipairs(equippedGears) do
+-- Check if a gear uniqueId is already in the equipped gears table.
+local function isGearEquipped(equippedGears: { [number]: string }, uniqueId: string): boolean
+	for _, uid in pairs(equippedGears) do
 		if uid == uniqueId then
 			return true
 		end
@@ -42,16 +29,17 @@ local function isGearEquipped(equippedGears: { string }, uniqueId: string): bool
 	return false
 end
 
--- Equip a gear to a slot. Slots are 1-indexed and must fill consecutively
--- (contiguous array invariant). Returns (true) or (false, errorCode).
+-- Equip a gear to a slot. Slots are 1-indexed. Any empty slot within the
+-- motor's capacity is valid (non-contiguous equipping is allowed).
+-- Returns (true) or (false, errorCode).
 function GearService.EquipGear(player: Player, gearUniqueId: string, slotIndex: number): (boolean, string?)
 	local profile = PlayerDataService:GetProfile(player)
 	if not profile then
 		return false, "Profile not loaded"
 	end
 
-	-- Validate ownership
-	local gearInstance = findGearInstance(profile.ownedGears, gearUniqueId)
+	-- Validate ownership via inventory.gears map
+	local gearInstance = profile.inventory.gears[gearUniqueId]
 	if not gearInstance then
 		return false, "Gear not owned"
 	end
@@ -63,7 +51,7 @@ function GearService.EquipGear(player: Player, gearUniqueId: string, slotIndex: 
 
 	-- Coerce to integer
 	slotIndex = math.floor(slotIndex)
-	if slotIndex < 1 then
+	if slotIndex < 1 or slotIndex > 5 then
 		return false, "Invalid slot"
 	end
 
@@ -83,15 +71,13 @@ function GearService.EquipGear(player: Player, gearUniqueId: string, slotIndex: 
 		return false, "MOTOR_TIER_TOO_LOW"
 	end
 
-	-- Slot must be the next available slot (contiguous array, no gaps)
-	-- If slotIndex <= #equippedGears the slot is occupied.
-	-- If slotIndex > #equippedGears + 1 it would leave a gap.
-	if slotIndex ~= #profile.equippedGears + 1 then
+	-- Slot must be empty (fixed 5-slot table, no contiguous requirement)
+	if profile.equippedGears[slotIndex] ~= nil then
 		return false, "SLOT_OCCUPIED"
 	end
 
 	-- Equip
-	table.insert(profile.equippedGears, gearUniqueId)
+	profile.equippedGears[slotIndex] = gearUniqueId
 
 	-- Notify client
 	GearEquippedRemote:FireClient(player, gearUniqueId, slotIndex)
@@ -99,8 +85,8 @@ function GearService.EquipGear(player: Player, gearUniqueId: string, slotIndex: 
 	return true
 end
 
--- Unequip gear from a slot. Removes the entry from the contiguous array
--- and shifts subsequent entries left. Returns (true) or (false, errorMsg).
+-- Unequip gear from a slot. Sets the slot to nil (no shifting).
+-- Returns (true) or (false, errorMsg).
 function GearService.UnequipGear(player: Player, slotIndex: number): (boolean, string?)
 	local profile = PlayerDataService:GetProfile(player)
 	if not profile then
@@ -108,12 +94,16 @@ function GearService.UnequipGear(player: Player, slotIndex: number): (boolean, s
 	end
 
 	slotIndex = math.floor(slotIndex)
-	if slotIndex < 1 or slotIndex > #profile.equippedGears then
+	if slotIndex < 1 or slotIndex > 5 then
+		return false, "Invalid slot"
+	end
+
+	if profile.equippedGears[slotIndex] == nil then
 		return false, "No gear in that slot"
 	end
 
-	-- Remove from array (shifts subsequent entries left, maintaining contiguity)
-	local removedUid = table.remove(profile.equippedGears, slotIndex)
+	-- Clear the slot (no shifting — fixed 5-slot table)
+	profile.equippedGears[slotIndex] = nil
 
 	-- Notify client: nil gearUniqueId signals the slot was cleared
 	GearEquippedRemote:FireClient(player, nil, slotIndex)

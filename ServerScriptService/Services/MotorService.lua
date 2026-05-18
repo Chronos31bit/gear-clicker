@@ -36,7 +36,7 @@ function MotorService.EquipMotor(player: Player, motorId: string): (boolean, str
 	end
 
 	-- Check if player owns this motor
-	if not profile.ownedMotors[motorId] then
+	if not profile.inventory.motors[motorId] then
 		return false, "You don't own this motor"
 	end
 
@@ -52,27 +52,37 @@ function MotorService.EquipMotor(player: Player, motorId: string): (boolean, str
 	local unequippedGearIds: { string } = {}
 
 	-- Phase 1: Unequip gears whose tier exceeds the new motor's maxGearTier
-	-- Build a lookup for tier by uniqueId
-	local tierByUniqueId: { [string]: number } = {}
-	for _, gear in ipairs(profile.ownedGears) do
-		tierByUniqueId[gear.uniqueId] = gear.tier
-	end
-
-	local i = #profile.equippedGears
-	while i >= 1 do
-		local uid = profile.equippedGears[i]
-		local gearTier = tierByUniqueId[uid]
-		if gearTier and gearTier > motorDef.maxGearTier then
-			table.remove(profile.equippedGears, i)
+	for slot = 1, 5 do
+		local uid = profile.equippedGears[slot]
+		if not uid then
+			continue
+		end
+		local gearInst = profile.inventory.gears[uid]
+		if gearInst and gearInst.tier > motorDef.maxGearTier then
+			profile.equippedGears[slot] = nil
 			table.insert(unequippedGearIds, uid)
 		end
-		i -= 1
 	end
 
-	-- Phase 2: If still over the slot count, remove extras from the end
-	while #profile.equippedGears > motorDef.maxGearSlots do
-		local uid = table.remove(profile.equippedGears)
-		table.insert(unequippedGearIds, uid)
+	-- Phase 2: If still over the slot count, remove extras from the highest slots
+	local filledSlots = 0
+	for slot = 1, 5 do
+		if profile.equippedGears[slot] then
+			filledSlots += 1
+		end
+	end
+
+	local excess = filledSlots - motorDef.maxGearSlots
+	if excess > 0 then
+		for slot = 5, 1, -1 do
+			if excess <= 0 then break end
+			local uid = profile.equippedGears[slot]
+			if uid then
+				profile.equippedGears[slot] = nil
+				table.insert(unequippedGearIds, uid)
+				excess -= 1
+			end
+		end
 	end
 
 	-- Notify the client
