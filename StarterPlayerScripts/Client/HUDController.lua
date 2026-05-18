@@ -121,7 +121,7 @@ local function buildHUD(playerGui: PlayerGui)
 	panel.BackgroundTransparency = 0.15
 	panel.BorderSizePixel = 0
 	panel.Position = UDim2.new(0, 16, 0, 16)
-	panel.Size = UDim2.new(0, 340, 0, 340)
+	panel.Size = UDim2.new(0, 340, 0, 390)
 	panel.Parent = gui
 
 	-- Cash
@@ -210,6 +210,23 @@ local function buildHUD(playerGui: PlayerGui)
 	-- Total / click footer
 	local footer = makeLabel(panel, "Footer", "", 18, 13, EMPTY)
 	footer.Position = UDim2.new(0, 14, 0, 310)
+
+	-- Unbox button
+	local unboxBtn = Instance.new("TextButton")
+	unboxBtn.Name = "UnboxButton"
+	unboxBtn.Text = "\u{25B6}  OPEN BOXES"
+	unboxBtn.Font = Enum.Font.GothamBold
+	unboxBtn.TextSize = 16
+	unboxBtn.TextColor3 = FG
+	unboxBtn.BackgroundColor3 = Color3.fromRGB(200, 130, 30)
+	unboxBtn.BorderSizePixel = 0
+	unboxBtn.Size = UDim2.new(1, -20, 0, 36)
+	unboxBtn.Position = UDim2.new(0, 10, 0, 340)
+	unboxBtn.Parent = panel
+	unboxBtn.MouseButton1Click:Connect(function()
+		local UnboxController = require(PlayerScripts:WaitForChild("UnboxController"))
+		UnboxController.Toggle()
+	end)
 end
 
 -- ── UI update helpers ──────────────────────────────

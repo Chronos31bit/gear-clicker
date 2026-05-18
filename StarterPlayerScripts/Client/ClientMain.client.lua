@@ -6,5 +6,7 @@
 local PlayerScripts = script.Parent
 
 local HUDController = require(PlayerScripts:WaitForChild("HUDController"))
+local UnboxController = require(PlayerScripts:WaitForChild("UnboxController"))
 
 HUDController:Init()
+UnboxController:Init()
