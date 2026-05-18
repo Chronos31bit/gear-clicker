@@ -12,6 +12,7 @@
         "$className": "Folder",
         "OpenBox": { "$className": "RemoteEvent" },
         "EquipMotor": { "$className": "RemoteEvent" },
+        "MotorEquipped": { "$className": "RemoteEvent" },
         "EquipGear": { "$className": "RemoteEvent" },
         "ClickGear": { "$className": "RemoteEvent" },
         "RequestSave": { "$className": "RemoteEvent" },
