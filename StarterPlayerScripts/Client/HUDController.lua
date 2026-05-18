@@ -224,9 +224,9 @@ local function buildHUD(playerGui: PlayerGui)
 	unboxBtn.Position = UDim2.new(0, 10, 0, 340)
 	unboxBtn.Parent = panel
 	unboxBtn.MouseButton1Click:Connect(function()
-		local UnboxController = require(PlayerScripts:WaitForChild("UnboxController"))
-		UnboxController.Toggle()
-	end)
+			local UnboxController = require(script.Parent:WaitForChild("UnboxController"))
+			UnboxController.Toggle()
+		end)
 end
 
 -- ── UI update helpers ──────────────────────────────

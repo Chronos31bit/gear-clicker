@@ -134,9 +134,15 @@ local BoxData: { [string]: BoxDef } = {
 	},
 }
 
--- Return the full box catalog.
+-- Return the full box catalog (only box definitions, not utility functions).
 function BoxData.GetCatalog(): { [string]: BoxDef }
-	return BoxData
+	local catalog: { [string]: BoxDef } = {}
+	for id, def in pairs(BoxData) do
+		if typeof(def) == "table" and (def :: any).id then
+			catalog[id] = def :: BoxDef
+		end
+	end
+	return catalog
 end
 
 -- Look up a single box definition by ID. Returns nil if not found.
