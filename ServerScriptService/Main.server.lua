@@ -8,7 +8,6 @@ local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-local OpenBox = Remotes:WaitForChild("OpenBox") :: RemoteEvent
 local EquipMotor = Remotes:WaitForChild("EquipMotor") :: RemoteEvent
 local EquipGear = Remotes:WaitForChild("EquipGear") :: RemoteEvent
 local ClickGear = Remotes:WaitForChild("ClickGear") :: RemoteEvent
@@ -30,10 +29,6 @@ EarningsService:Init()
 InventoryService:Init()
 MotorService:Init()
 GearService:Init()
-
-OpenBox.OnServerEvent:Connect(function(player, ...)
-	UnboxService:HandleOpenBox(player, ...)
-end)
 
 RequestSave.OnServerEvent:Connect(function(player)
 	PlayerDataService:SavePlayerAsync(player, false)

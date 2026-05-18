@@ -91,4 +91,15 @@ function MotorData.GetMotor(motorId: string): MotorDef?
 	return MotorData[motorId]
 end
 
+-- Look up a motor definition by tier number.
+-- Returns the first motor found at that tier, or nil if none exist.
+function MotorData.GetMotorByTier(tier: number): MotorDef?
+	for _, def in pairs(MotorData) do
+		if typeof(def) == "table" and (def :: any).tier == tier then
+			return def :: MotorDef
+		end
+	end
+	return nil
+end
+
 return MotorData

@@ -75,4 +75,15 @@ function GearData.GetGear(gearId: string): GearDef?
 	return GearData[gearId]
 end
 
+-- Look up a gear definition by tier number.
+-- Returns the first gear found at that tier, or nil if none exist.
+function GearData.GetGearByTier(tier: number): GearDef?
+	for _, def in pairs(GearData) do
+		if typeof(def) == "table" and (def :: any).tier == tier then
+			return def :: GearDef
+		end
+	end
+	return nil
+end
+
 return GearData
