@@ -5,3 +5,8 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local PlayerScripts = script.Parent
+
+local HUDController = require(PlayerScripts:WaitForChild("HUDController"))
+
+HUDController:Init()

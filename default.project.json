@@ -17,6 +17,8 @@
         "GearEquipped": { "$className": "RemoteEvent" },
         "UnequipGear": { "$className": "RemoteEvent" },
         "ClickGear": { "$className": "RemoteEvent" },
+        "CashUpdated": { "$className": "RemoteEvent" },
+        "WelcomeBack": { "$className": "RemoteEvent" },
         "RequestSave": { "$className": "RemoteEvent" },
         "GetPlayerData": { "$className": "RemoteFunction" },
         "GetCatalog": { "$className": "RemoteFunction" }

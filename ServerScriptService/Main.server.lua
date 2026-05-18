@@ -34,10 +34,6 @@ OpenBox.OnServerEvent:Connect(function(player, ...)
 	UnboxService:HandleOpenBox(player, ...)
 end)
 
-ClickGear.OnServerEvent:Connect(function(player, ...)
-	EarningsService:HandleClickGear(player, ...)
-end)
-
 RequestSave.OnServerEvent:Connect(function(player)
 	PlayerDataService:SavePlayerAsync(player)
 end)
