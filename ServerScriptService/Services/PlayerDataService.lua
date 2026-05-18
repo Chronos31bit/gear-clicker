@@ -1,4 +1,4 @@
-﻿--!strict
+--!strict
 
 -- Player profile lifecycle: DataStore persistence, session locking, schema validation.
 -- Server-authoritative: client never reads or writes DataStore directly.
