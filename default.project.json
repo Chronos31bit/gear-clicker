@@ -1,0 +1,47 @@
+{
+  "name": "Gear Clicker",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Modules": {
+        "$className": "Folder",
+        "$path": "ReplicatedStorage/Modules"
+      },
+      "Remotes": {
+        "$className": "Folder",
+        "OpenBox": { "$className": "RemoteEvent" },
+        "EquipMotor": { "$className": "RemoteEvent" },
+        "EquipGear": { "$className": "RemoteEvent" },
+        "ClickGear": { "$className": "RemoteEvent" },
+        "RequestSave": { "$className": "RemoteEvent" },
+        "GetPlayerData": { "$className": "RemoteFunction" },
+        "GetCatalog": { "$className": "RemoteFunction" }
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "Services": {
+        "$className": "Folder",
+        "$path": "ServerScriptService/Services"
+      },
+      "Main": {
+        "$className": "Script",
+        "$path": "ServerScriptService/Main.server.lua"
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "Client": {
+          "$className": "Folder",
+          "ClientMain": { "$className": "LocalScript", "$path": "StarterPlayerScripts/Client/ClientMain.lua" },
+          "HUDController": { "$className": "LocalScript", "$path": "StarterPlayerScripts/Client/HUDController.lua" },
+          "UnboxController": { "$className": "LocalScript", "$path": "StarterPlayerScripts/Client/UnboxController.lua" },
+          "InventoryController": { "$className": "LocalScript", "$path": "StarterPlayerScripts/Client/InventoryController.lua" }
+        }
+      }
+    }
+  }
+}
