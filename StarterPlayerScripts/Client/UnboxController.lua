@@ -459,8 +459,10 @@ local function buildUnboxScreen(playerGui: PlayerGui)
 				btnColor,
 				function()
 					if not canAfford then return end
+					-- Fire the open request — server sends BoxOpened back with results
 					OpenBoxRemote:FireServer(boxDef.id, qty)
-					UnboxController.Hide()
+					-- Don't close the GUI here: results arrive via BoxOpened and
+					-- display on the unbox GUI as popups or a scrolling results list.
 				end
 			)
 			btn.TextSize = 11
@@ -516,6 +518,9 @@ local function onBoxOpened(data: any)
 	if data.cashRemaining then
 		currentCash = data.cashRemaining
 	end
+
+	-- Refresh button affordability colors
+	refreshAffordability()
 
 	-- Show individual popups for each result (with delay for visual feedback)
 	local results = data.results or {}
