@@ -292,7 +292,7 @@ local function updateGearSlots()
 
 				nameL.Text = displayName
 				nameL.TextColor3 = FG
-				rarityL.Text = "\9993 " .. rarityName
+				rarityL.Text = "\u{2709} " .. rarityName
 				rarityL.TextColor3 = rColor
 
 				local gearEarn = computeGearEarningsPerTick(gearInst.id, gearInst.rarity, rpm)

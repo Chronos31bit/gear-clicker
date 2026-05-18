@@ -73,7 +73,7 @@ local jobId: string = game.JobId
 --------------------
 
 local function generateToken(): string
-	return string.format("%x-%x-%x", math.random(1, 2^31), math.random(1, 2^31), math.random(1, 2^31))
+	return string.format("%x-%x-%x", math.random(1, 999999999), math.random(1, 999999999), math.random(1, 999999999))
 end
 
 local function makeDataKey(userId: number): string
