@@ -241,6 +241,7 @@ function playerDataService:LoadPlayerAsync(player: Player): Profile?
 	if not dataStore then
 		local profile = newDefaultProfile()
 		profiles[player] = profile
+		print(string.format("[PDS] %s stored in-memory profile, cash=%d", tag, profile.cash))
 		return profile
 	end
 
@@ -419,14 +420,19 @@ function playerDataService:Init()
 
 	-- Player join (future joins)
 	Players.PlayerAdded:Connect(function(player: Player)
+		print(string.format("[PDS] PlayerAdded: %s (%d)", player.Name, player.UserId))
 		task.spawn(function()
 			playerDataService:LoadPlayerAsync(player)
 		end)
 	end)
 
 	-- Load profiles for players already in the game (Studio test + late joins)
-	for _, player in ipairs(Players:GetPlayers()) do
+	local existingPlayers = Players:GetPlayers()
+	print(string.format("[PDS] Existing players at Init: %d", #existingPlayers))
+	for _, player in ipairs(existingPlayers) do
+		print(string.format("[PDS] Spawning load for existing player: %s (%d)", player.Name, player.UserId))
 		task.spawn(function()
+			print(string.format("[PDS] Spawned task running for: %s (%d)", player.Name, player.UserId))
 			playerDataService:LoadPlayerAsync(player)
 		end)
 	end
