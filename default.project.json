@@ -43,6 +43,7 @@
           "ClientMain": { "$path": "StarterPlayerScripts/Client/ClientMain.client.lua" },
           "HUDController": { "$path": "StarterPlayerScripts/Client/HUDController.lua" },
           "UnboxController": { "$path": "StarterPlayerScripts/Client/UnboxController.lua" },
+          "UnboxRevealController": { "$path": "StarterPlayerScripts/Client/UnboxRevealController.lua" },
           "InventoryController": { "$path": "StarterPlayerScripts/Client/InventoryController.lua" }
         }
       }
