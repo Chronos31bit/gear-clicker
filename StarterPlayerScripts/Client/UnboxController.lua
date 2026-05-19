@@ -11,6 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local BoxData = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("BoxData"))
 local RarityData = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("RarityData"))
+local UnboxRevealController = require(script:WaitForChild("UnboxRevealController"))
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local OpenBoxRemote = Remotes:WaitForChild("OpenBox") :: RemoteEvent
@@ -451,14 +452,12 @@ local function buildUnboxScreen(playerGui: PlayerGui)
 		-- Open buttons
 		local btnY = 120
 		local function makeOpenBtn(btnName: string, label: string, posX: number, width: number, qty: number)
-			local canAfford = currentCash >= boxDef.cost * qty
-			local btnColor = canAfford and ACCENT or Color3.fromRGB(60, 60, 70)
 			local btn = makeButton(card, btnName, label,
 				UDim2.new(0, width, 0, 26),
 				UDim2.new(0, posX, 0, btnY),
-				btnColor,
+				ACCENT,
 				function()
-					if not canAfford then return end
+					if currentCash < boxDef.cost * qty then return end
 					-- Fire the open request — server sends BoxOpened back with results
 					OpenBoxRemote:FireServer(boxDef.id, qty)
 					-- Don't close the GUI here: results arrive via BoxOpened and
@@ -518,26 +517,16 @@ local function onBoxOpened(data: any)
 	if data.cashRemaining then
 		currentCash = data.cashRemaining
 	end
-
-	-- Refresh button affordability colors
 	refreshAffordability()
 
-	-- Show individual popups for each result (with delay for visual feedback)
+	-- Play the reveal animation
 	local results = data.results or {}
-	if #results > 0 then
-		if #results <= 3 then
-			-- For small batches, show popups one at a time
-			for i, result in ipairs(results) do
-				task.delay((i - 1) * 0.6, function()
-					showResultPopup(result)
-				end)
-			end
-		else
-			-- For large batches, show the scrolling results list
-			task.delay(0.3, function()
+	if #results > 0 and unboxGui then
+		UnboxRevealController.PlayReveals(results, unboxGui, function()
+			if #results > 3 then
 				showResultsList(results)
-			end)
-		end
+			end
+		end)
 	end
 end
 
@@ -572,6 +561,11 @@ function UnboxController.Hide()
 		end
 	end
 
+	-- Cancel any active reveal animation
+	UnboxRevealController.CancelReveal()
+	-- Destroy any reveal overlay
+	local revealOverlay = unboxGui:FindFirstChild("RevealOverlay")
+	if revealOverlay then revealOverlay:Destroy() end
 	unboxGui.Enabled = false
 end
 
