@@ -21,8 +21,6 @@ local GameConfig = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChil
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 local AdminCommand: RemoteEvent? = nil
-
--- Resolve on init; used to push cash updates to the client HUD
 local CashUpdatedRemote: RemoteEvent? = nil
 
 local AdminService = {}
@@ -43,15 +41,27 @@ local function ensureRemote()
 	-- Also grab CashUpdated so we can push HUD updates to the client
 	if not CashUpdatedRemote then
 		CashUpdatedRemote = Remotes:FindFirstChild("CashUpdated") :: RemoteEvent?
+		if CashUpdatedRemote then
+			print("[AdminService] CashUpdated remote resolved")
+		else
+			warn("[AdminService] CashUpdated remote NOT FOUND — HUD will not update")
+		end
 	end
 end
 
 -- Notify the client that their cash changed, so the HUD updates immediately
 local function notifyCashChanged(player: Player)
-	if not CashUpdatedRemote then return end
+	if not CashUpdatedRemote then
+		warn("[AdminService] notifyCashChanged: CashUpdatedRemote is nil, cannot notify client")
+		return
+	end
 	local profile = PlayerDataService:GetProfile(player)
-	if not profile then return end
+	if not profile then
+		warn("[AdminService] notifyCashChanged: no profile for " .. player.Name)
+		return
+	end
 	CashUpdatedRemote:FireClient(player, profile.cash, 0)
+	print(string.format("[AdminService] Fired CashUpdated for %s: $%s", player.Name, tostring(profile.cash)))
 end
 
 -- ── Command handlers ──────────────────────────────
@@ -75,8 +85,6 @@ local function handleBox(player: Player, boxId: string, qtyStr: string?)
 	end
 	local qty = math.clamp(tonumber(qtyStr) or 1, 1, 100)
 
-	-- Grant boxes by adding enough cash to buy them, then the player opens manually.
-	-- This avoids duplicating the full open-roll-apply logic here.
 	local cost = boxDef.cost * qty
 	PlayerDataService.AddCash(player, cost)
 	notifyCashChanged(player)
@@ -84,7 +92,6 @@ local function handleBox(player: Player, boxId: string, qtyStr: string?)
 end
 
 local function handleReset(player: Player)
-	-- Reset profile to defaults but keep the player's starter motor
 	local profile = PlayerDataService:GetProfile(player)
 	if not profile then return end
 
@@ -100,7 +107,6 @@ local function handleReset(player: Player)
 end
 
 local function handleAllBoxes(player: Player)
-	-- Grant cash to buy one of every box type
 	local boxes = BoxData.GetCatalogList()
 	local total = 0
 	for _, boxDef in ipairs(boxes) do
@@ -114,7 +120,6 @@ end
 -- ── Remote handler ────────────────────────────────
 
 local function onAdminCommand(player: Player, command: any, ...: any)
-	-- Only process in Studio
 	if not RunService:IsStudio() then
 		warn("[Admin] Admin commands only work in Studio")
 		return

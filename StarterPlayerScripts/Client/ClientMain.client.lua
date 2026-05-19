@@ -21,6 +21,7 @@ UnboxController:Init()
 
 if RunService:IsStudio() then
 	local AdminCommand: RemoteEvent? = nil
+	local GetPlayerData: RemoteFunction? = nil
 	local adminGui: ScreenGui? = nil
 	local adminOpen: boolean = false
 
@@ -32,19 +33,43 @@ if RunService:IsStudio() then
 	local GOLD = Color3.fromRGB(255, 210, 90)
 	local RED = Color3.fromRGB(200, 70, 70)
 
-	local function ensureRemote()
-		if AdminCommand then return end
+	local function ensureRemotes()
+		if AdminCommand and GetPlayerData then return end
 		local remotes = ReplicatedStorage:WaitForChild("Remotes")
-		local found = remotes:FindFirstChild("AdminCommand")
-		if found then
-			AdminCommand = found :: RemoteEvent
+		if not AdminCommand then
+			local found = remotes:FindFirstChild("AdminCommand")
+			if found then
+				AdminCommand = found :: RemoteEvent
+			end
+		end
+		if not GetPlayerData then
+			local found = remotes:FindFirstChild("GetPlayerData")
+			if found then
+				GetPlayerData = found :: RemoteFunction
+			end
 		end
 	end
 
+	-- Fire admin command and then refresh client state from the server
 	local function fireCmd(command: string, ...: any)
-		ensureRemote()
+		ensureRemotes()
 		if AdminCommand then
 			AdminCommand:FireServer(command, ...)
+		end
+
+		-- Wait a moment for the server to process, then pull fresh data
+		task.wait(0.15)
+		if GetPlayerData then
+			local ok, data = pcall(function()
+				return GetPlayerData:InvokeServer()
+			end)
+			if ok and data then
+				print(string.format("[Admin] Cash now: $%s", tostring(data.cash)))
+				-- Push the new balance into the HUD via the UnboxController's cash refresh
+				UnboxController.UpdateCash(data.cash)
+			else
+				warn("[Admin] Failed to refresh player data")
+			end
 		end
 	end
 
