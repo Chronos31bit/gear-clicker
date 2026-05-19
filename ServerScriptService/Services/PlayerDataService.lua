@@ -319,11 +319,11 @@ end
 -- Public API     --
 --------------------
 
-function playerDataService.GetProfile(player: Player): Profile?
+function playerDataService:GetProfile(player: Player): Profile?
 	return profiles[player.UserId]
 end
 
-function playerDataService.GetPlayerData(player: Player): { [string]: any }?
+function playerDataService:GetPlayerData(player: Player): { [string]: any }?
 	local profile = profiles[player.UserId]
 	if not profile then return nil end
 	return copyProfileForClient(profile)
