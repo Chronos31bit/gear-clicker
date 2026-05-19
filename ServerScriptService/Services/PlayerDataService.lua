@@ -410,12 +410,19 @@ function playerDataService:Init()
 		dataStore = nil
 	end
 
-	-- Player join
+	-- Player join (future joins)
 	Players.PlayerAdded:Connect(function(player: Player)
 		task.spawn(function()
 			playerDataService:LoadPlayerAsync(player)
 		end)
 	end)
+
+	-- Load profiles for players already in the game (Studio test + late joins)
+	for _, player in ipairs(Players:GetPlayers()) do
+		task.spawn(function()
+			playerDataService:LoadPlayerAsync(player)
+		end)
+	end
 
 	-- Player leave
 	Players.PlayerRemoving:Connect(function(player: Player)
