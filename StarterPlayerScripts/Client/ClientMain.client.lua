@@ -13,9 +13,11 @@ local PlayerScripts = script.Parent
 
 local HUDController = require(PlayerScripts:WaitForChild("HUDController"))
 local UnboxController = require(PlayerScripts:WaitForChild("UnboxController"))
+local InventoryController = require(PlayerScripts:WaitForChild("InventoryController"))
 
 HUDController:Init()
 UnboxController:Init()
+InventoryController:Init()
 
 -- ── Admin panel (Studio only) ─────────────────────
 
