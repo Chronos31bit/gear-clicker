@@ -493,7 +493,7 @@ function UnboxRevealController.PlayReveals(results: { any }, unboxGui: ScreenGui
 		return
 	end
 
-	CancelReveal()
+	UnboxRevealController.CancelReveal()
 	revealActive = true
 
 	-- Create the slot overlay
