@@ -22,6 +22,9 @@ local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 local AdminCommand: RemoteEvent? = nil
 
+-- Resolve on init; used to push cash updates to the client HUD
+local CashUpdatedRemote: RemoteEvent? = nil
+
 local AdminService = {}
 
 local function ensureRemote()
@@ -36,6 +39,19 @@ local function ensureRemote()
 		AdminCommand = newRemote :: RemoteEvent
 		print("[AdminService] Created AdminCommand RemoteEvent")
 	end
+
+	-- Also grab CashUpdated so we can push HUD updates to the client
+	if not CashUpdatedRemote then
+		CashUpdatedRemote = Remotes:FindFirstChild("CashUpdated") :: RemoteEvent?
+	end
+end
+
+-- Notify the client that their cash changed, so the HUD updates immediately
+local function notifyCashChanged(player: Player)
+	if not CashUpdatedRemote then return end
+	local profile = PlayerDataService:GetProfile(player)
+	if not profile then return end
+	CashUpdatedRemote:FireClient(player, profile.cash, 0)
 end
 
 -- ── Command handlers ──────────────────────────────
@@ -47,6 +63,7 @@ local function handleCash(player: Player, amountStr: string)
 		return
 	end
 	PlayerDataService.AddCash(player, amount)
+	notifyCashChanged(player)
 	print(string.format("[Admin] %s: +$%s", player.Name, amountStr))
 end
 
@@ -62,6 +79,7 @@ local function handleBox(player: Player, boxId: string, qtyStr: string?)
 	-- This avoids duplicating the full open-roll-apply logic here.
 	local cost = boxDef.cost * qty
 	PlayerDataService.AddCash(player, cost)
+	notifyCashChanged(player)
 	print(string.format("[Admin] %s: granted $%d to buy %d x %q", player.Name, cost, qty, boxId))
 end
 
@@ -77,6 +95,7 @@ local function handleReset(player: Player)
 	profile.inventory.gears = {}
 	profile.stats.totalEarned = 0
 	profile.stats.boxesOpened = 0
+	notifyCashChanged(player)
 	print(string.format("[Admin] %s: profile reset", player.Name))
 end
 
@@ -88,6 +107,7 @@ local function handleAllBoxes(player: Player)
 		total += boxDef.cost
 	end
 	PlayerDataService.AddCash(player, total)
+	notifyCashChanged(player)
 	print(string.format("[Admin] %s: granted $%d to buy one of every box", player.Name, total))
 end
 
