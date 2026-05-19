@@ -11,7 +11,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local BoxData = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("BoxData"))
 local RarityData = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("RarityData"))
-local UnboxRevealController = require(script:WaitForChild("UnboxRevealController"))
+local revealModule = script:FindFirstChild("UnboxRevealController")
+local UnboxRevealController = revealModule and require(revealModule) or nil
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local OpenBoxRemote = Remotes:WaitForChild("OpenBox") :: RemoteEvent
@@ -522,11 +523,20 @@ local function onBoxOpened(data: any)
 	-- Play the reveal animation
 	local results = data.results or {}
 	if #results > 0 and unboxGui then
-		UnboxRevealController.PlayReveals(results, unboxGui, function()
+		if UnboxRevealController then
+			UnboxRevealController.PlayReveals(results, unboxGui, function()
+				if #results > 3 then
+					showResultsList(results)
+				end
+			end)
+		else
+			-- Fallback: no reveal module (not synced yet), show results directly
 			if #results > 3 then
 				showResultsList(results)
+			else
+				warn("[Unbox] Reveal module not available, opened", #results, "items without animation")
 			end
-		end)
+		end
 	end
 end
 
@@ -562,7 +572,7 @@ function UnboxController.Hide()
 	end
 
 	-- Cancel any active reveal animation
-	UnboxRevealController.CancelReveal()
+	if UnboxRevealController then UnboxRevealController.CancelReveal() end
 	-- Destroy any reveal overlay
 	local revealOverlay = unboxGui:FindFirstChild("RevealOverlay")
 	if revealOverlay then revealOverlay:Destroy() end
