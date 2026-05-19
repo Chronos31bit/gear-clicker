@@ -63,7 +63,7 @@ local BACKOFF_BASE = 0.5
 --------------------
 
 local playerDataService: { [string]: any } = {}
-local profiles: { [Player]: Profile } = {}
+local profiles: { [number]: Profile } = {}
 local dataStore: DataStore? = nil
 local autosaveThread: thread? = nil
 local jobId: string = game.JobId
@@ -240,7 +240,7 @@ function playerDataService:LoadPlayerAsync(player: Player): Profile?
 	-- If DataStore is unavailable (Studio without API service), use in-memory
 	if not dataStore then
 		local profile = newDefaultProfile()
-		profiles[player] = profile
+		profiles[userId] = profile
 		print(string.format("[PDS] %s stored in-memory profile, cash=%d", tag, profile.cash))
 		return profile
 	end
@@ -262,7 +262,7 @@ function playerDataService:LoadPlayerAsync(player: Player): Profile?
 	if not ok then
 		warn(string.format("[PDS] %s DataStore error: %s", tag, tostring(result)))
 		local profile = newDefaultProfile()
-		profiles[player] = profile
+		profiles[userId] = profile
 		return profile
 	end
 
@@ -275,12 +275,12 @@ function playerDataService:LoadPlayerAsync(player: Player): Profile?
 
 	-- Strip session from in-memory cache (re-added on each save)
 	(result :: any)._session = nil
-	profiles[player] = result
+	profiles[userId] = result
 	return result
 end
 
 function playerDataService:SavePlayerAsync(player: Player, clearSession: boolean?): boolean
-	local profile = profiles[player]
+	local profile = profiles[player.UserId]
 	if not profile then
 		return true
 	end
@@ -320,17 +320,17 @@ end
 --------------------
 
 function playerDataService.GetProfile(player: Player): Profile?
-	return profiles[player]
+	return profiles[player.UserId]
 end
 
 function playerDataService.GetPlayerData(player: Player): { [string]: any }?
-	local profile = profiles[player]
+	local profile = profiles[player.UserId]
 	if not profile then return nil end
 	return copyProfileForClient(profile)
 end
 
 function playerDataService.AddCash(player: Player, amount: number)
-	local profile = profiles[player]
+	local profile = profiles[player.UserId]
 	if not profile then return end
 	profile.cash += amount
 	if amount > 0 then
@@ -339,7 +339,7 @@ function playerDataService.AddCash(player: Player, amount: number)
 end
 
 function playerDataService.SpendCash(player: Player, amount: number): boolean
-	local profile = profiles[player]
+	local profile = profiles[player.UserId]
 	if not profile then return false end
 	if profile.cash < amount then return false end
 	profile.cash -= amount
@@ -347,7 +347,7 @@ function playerDataService.SpendCash(player: Player, amount: number): boolean
 end
 
 function playerDataService.AddGear(player: Player, gearInstance: GearInstance)
-	local profile = profiles[player]
+	local profile = profiles[player.UserId]
 	if not profile or not gearInstance then return end
 	if not gearInstance.uniqueId or not gearInstance.id then return end
 	profile.inventory.gears[gearInstance.uniqueId] = {
@@ -359,7 +359,7 @@ function playerDataService.AddGear(player: Player, gearInstance: GearInstance)
 end
 
 function playerDataService.RemoveGear(player: Player, uniqueId: string): boolean
-	local profile = profiles[player]
+	local profile = profiles[player.UserId]
 	if not profile then return false end
 	if not profile.inventory.gears[uniqueId] then return false end
 	profile.inventory.gears[uniqueId] = nil
@@ -367,7 +367,7 @@ function playerDataService.RemoveGear(player: Player, uniqueId: string): boolean
 end
 
 function playerDataService.AddMotor(player: Player, motorId: string)
-	local profile = profiles[player]
+	local profile = profiles[player.UserId]
 	if not profile then return end
 	profile.inventory.motors[motorId] = true
 end
@@ -377,9 +377,10 @@ end
 --------------------
 
 local function saveAllPlayers(clearSessions: boolean?)
-	for p, _ in pairs(profiles) do
-		if p and Players:FindFirstChild(p.Name) then
-			playerDataService:SavePlayerAsync(p, clearSessions)
+	for userId, _ in pairs(profiles) do
+		local player = Players:GetPlayerByUserId(userId)
+		if player then
+			playerDataService:SavePlayerAsync(player, clearSessions)
 		end
 	end
 end
@@ -420,19 +421,14 @@ function playerDataService:Init()
 
 	-- Player join (future joins)
 	Players.PlayerAdded:Connect(function(player: Player)
-		print(string.format("[PDS] PlayerAdded: %s (%d)", player.Name, player.UserId))
 		task.spawn(function()
 			playerDataService:LoadPlayerAsync(player)
 		end)
 	end)
 
 	-- Load profiles for players already in the game (Studio test + late joins)
-	local existingPlayers = Players:GetPlayers()
-	print(string.format("[PDS] Existing players at Init: %d", #existingPlayers))
-	for _, player in ipairs(existingPlayers) do
-		print(string.format("[PDS] Spawning load for existing player: %s (%d)", player.Name, player.UserId))
+	for _, player in ipairs(Players:GetPlayers()) do
 		task.spawn(function()
-			print(string.format("[PDS] Spawned task running for: %s (%d)", player.Name, player.UserId))
 			playerDataService:LoadPlayerAsync(player)
 		end)
 	end
@@ -440,7 +436,7 @@ function playerDataService:Init()
 	-- Player leave
 	Players.PlayerRemoving:Connect(function(player: Player)
 		playerDataService:SavePlayerAsync(player, true)
-		profiles[player] = nil
+		profiles[player.UserId] = nil
 	end)
 
 	-- Autosave loop
