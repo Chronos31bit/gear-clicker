@@ -403,8 +403,15 @@ function playerDataService:Init()
 		return DataStoreService:GetDataStore("PlayerData")
 	end)
 	if ok then
-		dataStore = ds
-		print("[PlayerDataService] DataStore ready")
+		-- Studio doesn't have API service enabled by default: GetDataStore succeeds
+		-- but UpdateAsync hangs forever. Use in-memory profiles for testing.
+		if game:GetService("RunService"):IsStudio() then
+			print("[PlayerDataService] Studio mode — in-memory profiles only")
+			dataStore = nil
+		else
+			dataStore = ds
+			print("[PlayerDataService] DataStore ready")
+		end
 	else
 		warn("[PlayerDataService] No DataStore — running in memory-only mode")
 		dataStore = nil
